@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.tedu.ttms.system.dao.UserDao">
+	<!-- 查询用户列表 -->
+	<select id="findObjects" resultType="map">
+		select
+			id,
+			username,
+			email,
+			mobile,
+			valid
+		from
+			sys_users
+		<where>
+			<if test="entity!=null and entity.username!=null and entity.username!=''">
+				username LIKE CONCAT('%',#{entity.username},'%')
+			</if>
+			<if test="entity!=null and entity.email!=null and entity.email!=''">
+				email LIKE CONCAT('%',#{entity.email},'%')
+			</if>
+			<if test="entity!=null and entity.mobile!=null and entity.mobile!=''">
+				mobile LIKE CONCAT('%',#{entity.mobile},'%')
+			</if>
+		</where>
+		<if test="pageObject!=null and pageObject.pageSize != 0">
+			LIMIT #{pageObject.startIndex},#{pageObject.pageSize}
+		</if>
+	</select>
+	<!-- 查询记录总条数 -->
+	<select id="getRowCounts" parameterType="cn.tedu.ttms.system.entity.User" resultType="java.lang.Integer">
+		select count(*) from sys_users
+		<where>
+			<if test="entity!=null and entity.username!=null and entity.username!=''">
+				username LIKE CONCAT('%',#{entity.username},'%')
+			</if>
+			<if test="entity!=null and entity.email!=null and entity.email!=''">
+				email LIKE CONCAT('%',#{entity.email},'%')
+			</if>
+			<if test="entity!=null and entity.mobile!=null and entity.mobile!=''">
+				mobile LIKE CONCAT('%',#{entity.mobile},'%')
+			</if>
+		</where>
+	</select>
+	<!-- 保存用户信息 -->
+	<insert id="save" parameterType="cn.tedu.ttms.system.entity.User" useGeneratedKeys="true" keyProperty="entity.id">
+		insert into
+			sys_users
+			(username,password,salt,email,mobile,valid,createdTime,modifiedTime,
+			createdUser,modifiedUser)
+		values
+			(#{entity.username},#{entity.password},#{entity.salt},#{entity.email},#{entity.mobile},
+			1,NOW(),NOW(),#{entity.createdUser},#{entity.modifiedUser});
+	</insert>
+	<!-- 根据id查询用户信息 -->
+	<select id="findObjectById" parameterType="java.lang.Integer" resultType="map">
+		select
+			username,
+			password,
+			email,
+			mobile
+		from
+			sys_users
+		where
+			id = #{id}
+	</select>
+	<!-- 修改更新用户信息 -->
+	<update id="updateObject" parameterType="cn.tedu.ttms.system.entity.User">
+		update
+			sys_users
+		set
+			username = #{entity.username},
+			password = #{entity.password},
+			salt = #{entity.salt},
+			email = #{entity.email},
+			mobile = #{entity.mobile},
+			modifiedTime = NOW(),
+			modifiedUser = #{entity.modifiedUser}
+		where
+			id = #{entity.id}
+	</update>
+	<!-- 切换用户启用/禁用状态 -->
+	<update id="changeState">
+		update
+			sys_users
+		set
+			valid = #{valid}
+		where
+			id = #{id}
+	</update>
+	<!-- 根据用户名判读用户是否存在 -->
+	<select id="isExist" parameterType="java.lang.String" resultType="java.lang.Integer">
+		select count(*) from sys_users where valid=1 and username = #{username}
+	</select>
+	<!-- 根据用户名查询用户信息 -->
+	<select id="findObjectByName" parameterType="java.lang.String" resultType="cn.tedu.ttms.system.entity.User">
+		select
+			id,
+			username,
+			password,
+			salt,
+			email,
+			mobile
+		from
+			sys_users
+		where
+			valid = 1 
+		and
+			username = #{username}
+	</select>
+	<!-- 查询用户权限 -->
+	<select id="findPermission" parameterType="java.lang.Integer" resultType="java.lang.String">
+		select 
+			m.permission 
+		from 
+			sys_user_roles ur,sys_role_menus rm ,sys_menus m
+		where
+			ur.role_id = rm.role_id 
+		and
+			rm.menu_id = m.id 
+		and
+			ur.user_id = #{userId}
+	</select>
+	<!-- 查询登陆用户可见的所有菜单 -->
+	<select id="menuList" parameterType="java.lang.Integer" resultType="map">
+		select 
+			m.id,
+			m.name,
+			m.url,
+			m.parentId
+		from 
+			sys_user_roles ur,sys_role_menus rm ,sys_menus m
+		where
+			ur.role_id = rm.role_id 
+		and
+			rm.menu_id = m.id 
+		and
+			ur.user_id = #{id}
+		and 
+			type = 1
+	</select>
+</mapper>
